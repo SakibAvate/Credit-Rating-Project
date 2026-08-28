@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Track A — Batch Scoring</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header>
+  <h1>Track A · Credit Risk Scoring</h1>
+  <nav>
+    <a href="index.html">Score an applicant</a>
+    <a href="batch.html" class="active">Batch scoring</a>
+  </nav>
+</header>
+
+<main>
+  <div class="panel">
+    <h2>Batch scoring</h2>
+    <p class="hint">
+      Upload a CSV with the same raw columns used in training (SK_ID_CURR
+      optional, TARGET not needed). You'll get back a scored CSV with
+      probability of default, creditworthiness score, rating and decision
+      for every row.
+    </p>
+    <form id="batch-form">
+      <input type="file" id="csv-file" accept=".csv" required />
+      <button type="submit" id="submit-btn">Upload &amp; score</button>
+      <div class="spinner" id="spinner">Scoring file...</div>
+      <div class="error" id="error"></div>
+    </form>
+  </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/batch.js"></script>
+</body>
+</html>
