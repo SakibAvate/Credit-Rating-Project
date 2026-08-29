@@ -70,7 +70,7 @@ async function loadModelInfo() {
     showError(
       err.message.includes("503")
         ? "Model not trained yet. Run `python main.py train`, then reload this page."
-        : `Could not load model info: ${err.message}`
+        : `Could not load model info: ${err.message}`,
     );
   }
 }

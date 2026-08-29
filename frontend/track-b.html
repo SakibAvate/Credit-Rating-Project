@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Track B — Thin-File Credit Risk</title><link rel="stylesheet" href="css/style.css"/></head>
+<body><header><h1>Track B · Thin-File / No-Bureau</h1><nav><a href="dashboard.html">Dashboard</a><a href="index.html">Track A</a><a href="track-b.html" class="active">Track B</a><a href="batch.html">Batch scoring</a></nav></header>
+<main><div class="panel"><h2>Alternative financial behaviour</h2><p class="hint" id="hint">Loading Track B fields...</p><form id="applicant-form"><div class="field-grid" id="field-grid"></div><button type="submit" id="submit-btn" disabled>Score Track B applicant</button><div class="spinner" id="spinner">Scoring...</div><div class="error" id="error"></div></form></div>
+<div class="panel result-card" id="result-card"><h2>Result</h2><div class="score-row"><div class="score-number" id="score-number">—</div><div class="score-bar-track"><div class="score-bar-fill" id="score-bar" style="width:0%"></div></div></div><div><span class="badge" id="decision-badge">—</span><span class="rating-pill" id="rating-pill"></span></div><div class="reasons" id="reasons"></div></div></main>
+<script src="js/api.js"></script><script src="js/track-b.js"></script></body></html>

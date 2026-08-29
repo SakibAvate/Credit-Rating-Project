@@ -11,9 +11,11 @@ data/*.csv
 
 # Trained models
 models/*.joblib
+models/track_b/
 
 # Outputs
 outputs/*.csv
+outputs/track_b/
 
 # Environment variables
 .env

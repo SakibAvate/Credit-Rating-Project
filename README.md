@@ -1,128 +1,213 @@
-# Track A — Credit Risk Pipeline
+# Credit Risk Platform — Track A + Track B
 
-Default-risk model on credit-history + applicant data (the "Bureau history"
-branch in your diagram). Predicts probability of default (PD), converts it
-to a FICO-style creditworthiness score, assigns a rating band, explains the
-decision with SHAP, and applies an approve/refer/reject policy.
+A unified credit-risk prototype with two independent assessment tracks:
 
-This is your original two scripts (`encode_and_prepare.py` +
-`xgb_credit_risk_pipeline.py`) reorganized into a package that's easier to
-test, reuse for inference on new applicants, and deploy as an API.
+- **Track A — Bureau / conventional history:** your existing pipeline is preserved.
+- **Track B — Thin-File / No-Bureau:** XGBoost trained on the included synthetic, consented-financial-behaviour prototype data.
 
-## File structure
+Both tracks expose the same result contract: default probability, 300–850 creditworthiness score, rating, decision, track identifier, and SHAP-based top reasons.
 
-```
+> **Prototype limitation:** Track B uses synthetic data and is not a validated production credit-risk model. Production use requires real consented data, observed repayment outcomes, calibration, monitoring, and fairness/validation work.
+
+## Structure
+
+```text
 credit_risk_track_a/
-├── config.py                  # all tunables in one place (paths, columns,
-│                               #   hyperparameter grid, scorecard params,
-│                               #   rating bands, decision policy)
-├── main.py                    # CLI: `python main.py train` / `score`
+├── config.py                    # Track A configuration — unchanged
+├── main.py                      # unified CLI
 ├── requirements.txt
 ├── Dockerfile
-├── .gitignore
 ├── data/
-│   └── track_a_final.csv      # <- put your raw data here (gitignored)
-├── models/                    # saved preprocessor + model (created by `train`)
-├── outputs/                   # scored CSVs + SHAP report (created by `train`)
+│   ├── track_a_final.csv        # provide your existing Track A data here
+│   └── track_b_synthetic.csv    # included synthetic Track B data
+├── models/
+│   ├── *.joblib                 # Track A artifacts, created by Track A training
+│   └── track_b/                 # isolated Track B artifacts
+├── outputs/
+│   └── track_b/                 # Track B reports
 ├── src/
-│   ├── data_loader.py         # load raw CSV, single leakage-safe split
-│   ├── preprocessing.py       # ordinal/one-hot encoding (fit on train only)
-│   ├── train.py               # hyperparameter search, fit, calibration, eval
-│   ├── scoring.py             # PD -> score -> rating -> decision
-│   ├── explain.py             # SHAP global + per-applicant reasons
-│   └── pipeline.py            # orchestrates the steps above
+│   ├── ...                      # existing Track A code
+│   └── track_b/                 # Track B-only pipeline
 ├── serve/
-│   └── app.py                 # FastAPI service for real-time scoring
+│   ├── app.py                   # one FastAPI service for both tracks
+│   └── schemas.py
+├── frontend/
+│   ├── index.html               # existing Track A UI
+│   ├── track-b.html             # Track B UI
+│   ├── dashboard.html           # unified entry page
+│   └── js/
 └── tests/
-    └── test_scoring.py        # fast unit tests for the scorecard logic
 ```
 
-## What changed vs. the original two scripts (and why)
+## Important integration safety
 
-- **Single train/test split.** The original split `SK_ID_CURR` and the
-  feature matrix separately (two `train_test_split` calls relying on
-  identical `random_state`/row order to stay aligned). Now the raw
-  dataframe is split once, with the ID and target still attached, so they
-  can't drift out of sync.
-- **`scale_pos_weight` is persisted.** It's needed again at inference time
-  to undo the calibration distortion it introduces (see
-  `train.calibrate_probabilities`). The original script only used it
-  in-memory during the one training run; now it's saved to
-  `models/scale_pos_weight.joblib` alongside the model.
-- **Everything is a function**, not top-level script code, so it can be
-  unit-tested, imported, and reused for scoring new applicants without
-  retraining.
-- **One config file** instead of constants scattered across two scripts.
+Track B does **not** overwrite Track A model files. Track B uses:
 
-Everything else — the hyperparameter grid, scorecard formula (base score
-600 / base odds 50:1 / PDO 40), rating cutoffs, SHAP logic, and the
-APPROVE/REFER/REJECT policy — is unchanged from your original code. See
-the docstring at the top of `src/pipeline.py` / `config.py` for the
-assumptions that were already documented (TARGET definition, why these
-scorecard defaults, etc.) — none of that is business-policy-derived, so
-revisit it against your actual risk appetite before using this for real
-decisions.
+```text
+models/track_b/
+```
 
-## Running it
+and its own configuration under:
+
+```text
+src/track_b/config.py
+```
+
+Your existing Track A commands remain available:
+
+```bash
+python main.py train
+python main.py score --input new_applicants.csv --output scored.csv
+```
+
+New Track B commands are:
+
+```bash
+python main.py train-track-b
+python main.py score-track-b --input track_b_input.csv --output track_b_scored.csv
+```
+
+To train both sequentially:
+
+```bash
+python main.py train-all
+```
+
+`train-all` first runs your original Track A pipeline and only then runs Track B. It requires your existing `data/track_a_final.csv`.
+
+## Track B data
+
+The included `data/track_b_synthetic.csv` contains 30,000 synthetic applicants and these fields:
+
+```text
+applicant_id
+monthly_income
+income_stability
+avg_monthly_balance
+min_monthly_balance
+monthly_expense
+emi_amount
+emi_to_income_ratio
+bounce_rate_6m
+savings_rate
+savings_trend
+transaction_volatility
+cash_flow_surplus
+salary_credit_frequency
+default
+```
+
+`default` is the supervised training target and must not be entered by the frontend applicant form.
+
+## Train Track B
+
+From the project root:
 
 ```bash
 pip install -r requirements.txt
-
-# 1. Put your raw data at data/track_a_final.csv, then train end-to-end:
-python main.py train
-#   -> models/preprocessor.joblib, models/xgb_default_risk_model.joblib,
-#      models/scale_pos_weight.joblib
-#   -> outputs/shap_global_feature_importance.csv
-#   -> outputs/credit_decisions_with_shap.csv     (sample, with SHAP reasons)
-#   -> outputs/credit_decisions_full_test_set.csv (whole test set)
-
-# 2. Score a new batch of applicants (same raw columns, no TARGET needed):
-python main.py score --input new_applicants.csv --output scored.csv
-
-# 3. Run the test suite:
-pytest
+python main.py train-track-b
 ```
 
-## Deploying as an API
+The training pipeline performs:
 
-`serve/app.py` is a FastAPI service that loads the trained model +
-preprocessor once at startup and scores one applicant per request.
+1. Required-column validation
+2. Stratified train/test split
+3. Median imputation fitted on training data only
+4. XGBoost hyperparameter search
+5. Final model fit
+6. ROC-AUC / PR-AUC evaluation
+7. PD → common creditworthiness score → rating → decision
+8. SHAP global and per-applicant explanations
+9. Saved model/preprocessor/report artifacts
+
+A pre-trained Track B model is included in this integration ZIP so Track B can be tested without retraining. Re-running `train-track-b` replaces only the files inside `models/track_b/`.
+
+## One API for both tracks
+
+Start the service:
 
 ```bash
-# locally
 uvicorn serve.app:app --reload --port 8000
-
-# or via Docker (make sure models/ + the preprocessor are already trained
-# and present in the build context, or mount them as a volume)
-docker build -t track-a-credit-risk .
-docker run -p 8000:8000 -v $(pwd)/models:/app/models track-a-credit-risk
 ```
 
-Example request:
+Open:
 
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"NAME_EDUCATION_TYPE": "Higher education", "NAME_INCOME_TYPE": "Working", "NAME_FAMILY_STATUS": "Married", "...": "...rest of the raw applicant fields..."}'
+```text
+http://localhost:8000/dashboard.html
 ```
 
-Response:
+### API endpoints
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/health` | GET | Reports Track A and Track B model readiness |
+| `/api/model/info` | GET | Track A input metadata |
+| `/api/predict` | POST | Existing Track A single-applicant endpoint |
+| `/api/predict/track-a` | POST | Unified Track A endpoint |
+| `/api/track-b/model/info` | GET | Track B input metadata |
+| `/api/track-b/health` | GET | Track B readiness |
+| `/api/track-b/predict` | POST | Track B single-applicant endpoint |
+| `/api/predict/track-b` | POST | Unified Track B endpoint |
+| `/api/predict/batch` | POST | Existing Track A batch endpoint |
+| `/api/track-b/predict/batch` | POST | Track B batch endpoint |
+
+### Track B request
 
 ```json
 {
-  "pred_default_prob": 0.031,
-  "creditworthiness_score": 712.4,
-  "rating": "AA",
-  "decision": "APPROVE"
+  "monthly_income": 45000,
+  "income_stability": 0.90,
+  "avg_monthly_balance": 75000,
+  "min_monthly_balance": 25000,
+  "monthly_expense": 27000,
+  "emi_amount": 6000,
+  "emi_to_income_ratio": 0.13,
+  "bounce_rate_6m": 0.02,
+  "savings_rate": 0.40,
+  "savings_trend": 0.10,
+  "transaction_volatility": 0.18,
+  "cash_flow_surplus": 12000,
+  "salary_credit_frequency": 1.0
 }
 ```
 
-## Where this fits in the bigger picture
+### Common response
 
-Per your architecture diagram: this whole package is **Track A**
-(bureau-history applicants -> XGBoost A). Track B (thin/no-bureau
-applicants, transaction/cash-flow data) would be a parallel package with
-its own model, following the same shape — `data_loader` / `preprocessing`
-/ `train` / `scoring` / `explain` / `pipeline` — so the two tracks can
-share the `scoring.py` (creditworthiness score + rating + decision logic)
-and just plug in different feature pipelines and models upstream.
+```json
+{
+  "pred_default_prob": 0.08,
+  "creditworthiness_score": 780,
+  "rating": "AAA",
+  "decision": "APPROVE",
+  "scored_by": "TRACK_B",
+  "top_reasons": "..."
+}
+```
+
+The frontend calls the same backend service that hosts the pages, so no separate frontend server or CORS configuration is required for the normal deployment.
+
+## Docker
+
+Track B artifacts are included in this integration package. Track A artifacts are still generated from your existing Track A data.
+
+```bash
+docker build -t credit-risk-platform .
+docker run -p 8000:8000 credit-risk-platform
+```
+
+Then open `http://localhost:8000/dashboard.html`.
+
+## Validation performed on this integration
+
+The included Track B model was trained and the integrated API was exercised for:
+
+- health endpoint
+- Track B model metadata
+- unified Track B prediction endpoint
+- backward-compatible Track B prediction endpoint
+- Track B batch scoring endpoint
+- frontend dashboard serving
+- Python compilation
+- automated tests
+
+The original Track A implementation is retained as the base project. Because the original ZIP does not contain `data/track_a_final.csv` or trained Track A artifacts, Track A training still requires you to place your existing Track A data in `data/track_a_final.csv` and run `python main.py train`.
