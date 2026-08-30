@@ -98,3 +98,7 @@ data/db/
 *.tmp
 *.temp
 *.log
+
+
+# Generated Track B outputs
+outputs/track_b/
