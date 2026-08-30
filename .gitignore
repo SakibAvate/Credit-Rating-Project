@@ -1,21 +1,100 @@
-# Virtual environment
-creds/
+# ============================================================
+# Python
+# ============================================================
+
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
 .venv/
+venv/
+env/
+ENV/
+
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+
+# ============================================================
+# Environment / secrets
+# ============================================================
+
+.env
+.env.*
+!.env.example
+
+
+# ============================================================
+# Next.js
+# ============================================================
+
+.next/
+out/
+.turbo/
+
+# Node dependencies
+node_modules/
+
+# npm / yarn / pnpm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ============================================================
+# OS / editor
+# ============================================================
+
+.DS_Store
+Thumbs.db
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+
+
+# ============================================================
+# Large datasets / generated files
+# ============================================================
+
+# CSV datasets
+*.csv
+
+# Large model/data artifacts
+*.pkl
+*.pickle
+*.joblib
+*.parquet
+*.feather
+
+# Generated outputs
+backend/outputs/
 
 # Python cache
-__pycache__/
-*.pyc
+backend/**/__pycache__/
 
-# Data
-data/*.csv
 
-# Trained models
-models/*.joblib
-models/track_b/
+# ============================================================
+# MongoDB local data
+# ============================================================
 
-# Outputs
-outputs/*.csv
-outputs/track_b/
+mongodb/
+data/db/
 
-# Environment variables
-.env
+
+# ============================================================
+# Temporary files
+# ============================================================
+
+*.tmp
+*.temp
+*.log
