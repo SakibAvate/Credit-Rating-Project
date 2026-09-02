@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 import config
-import config_track_b
+from src.track_b import config as config_track_b
 
 
 @dataclass(frozen=True)
@@ -53,7 +53,7 @@ TRACKS: dict[str, TrackSpec] = {
         subtitle="Thin File / Alt Data",
         description="Applicants scored on consented bank/UPI transaction behaviour.",
         scored_by="TRACK_B",
-        raw_data_path=config_track_b.RAW_DATA_PATH,
+        raw_data_path=config_track_b.DATA_PATH,
         model_path=config_track_b.MODEL_PATH,
         preprocessor_path=config_track_b.PREPROCESSOR_PATH,
         scale_pos_weight_path=config_track_b.SCALE_POS_WEIGHT_PATH,
@@ -101,7 +101,7 @@ def resolve_train_tracks(track: str = "all") -> list[str]:
             raise FileNotFoundError(
                 "No training data found. Place CSV files in data/:\n"
                 f"  - {config.RAW_DATA_PATH}\n"
-                f"  - {config_track_b.RAW_DATA_PATH}"
+                f"  - {config_track_b.DATA_PATH}"
             )
         return available
     if track not in TRACKS:
