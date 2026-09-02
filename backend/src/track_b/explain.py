@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import shap
 from . import config
-
+from ..customer_explanations import build_customer_explanation
 
 def build_explainer(model):
     return shap.TreeExplainer(model)
@@ -39,3 +39,34 @@ def top_reasons_batch(values, X, n=config.TOP_N_REASONS):
             parts.append(f"{cols[j]}={X.iloc[i, j]:.3g} ({direction}, impact={values[i, j]:+.3f})")
         out.append("; ".join(parts))
     return out
+
+def customer_explanations_for_row(
+    row_shap,
+    columns,
+    row_values,
+    n=config.TOP_N_REASONS,
+) -> list[dict]:
+    """
+    Build structured, customer-friendly explanations
+    for the most important SHAP features for one applicant.
+    """
+
+    order = np.argsort(-np.abs(row_shap))[:n]
+
+    explanations = []
+
+    for idx in order:
+        feature = columns[idx]
+        value = row_values[idx]
+        impact = float(row_shap[idx])
+
+        explanation = build_customer_explanation(
+            track="TRACK_B",
+            feature=feature,
+            value=value,
+            impact=impact,
+        )
+
+        explanations.append(explanation)
+
+    return explanations

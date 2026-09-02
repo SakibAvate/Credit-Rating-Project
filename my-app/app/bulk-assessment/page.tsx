@@ -429,21 +429,7 @@ export default function BulkAssessment() {
        * Validate the CSV locally before sending it to FastAPI.
        */
 
-      const applicantCount = await validateCSVColumns(
-        file,
-        track
-      );
-
-      /*
-       * Keep applicantCount available for validation/debugging.
-       * The final processed count comes from the backend response.
-       */
-
-      if (applicantCount <= 0) {
-        throw new Error(
-          "The CSV does not contain any applicant records."
-        );
-      }
+      await validateCSVColumns(file, track);
 
       /*
        * Step 2:

@@ -1005,6 +1005,93 @@ function ResultCard({
       </div>
 
 
+      {result.customer_explanations &&
+        result.customer_explanations.length > 0 && (
+          <div className="mt-8 border-t border-blue-200 pt-6">
+            <h3 className="text-lg font-bold text-slate-900">
+              Why this assessment received this result
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-600">
+              These are the main factors that influenced the assessment.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {result.customer_explanations.map(
+                (explanation, index) => (
+                  <details
+                    key={`${explanation.feature}-${index}`}
+                    className="rounded-2xl border border-slate-200 bg-white p-5"
+                  >
+                    <summary className="cursor-pointer list-none">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <h4 className="text-lg font-bold text-slate-900">
+                            {explanation.title}
+                          </h4>
+
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                              explanation.direction ===
+                              "decreases_risk"
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-red-50 text-red-700"
+                            }`}
+                          >
+                            {explanation.direction ===
+                            "decreases_risk"
+                              ? "Helps your application"
+                              : "May increase your risk"}
+                          </span>
+                        </div>
+
+                        <span className="text-slate-400">
+                          ▼
+                        </span>
+                      </div>
+                    </summary>
+
+                    <div className="mt-4">
+                      <p className="text-sm leading-6 text-slate-700">
+                        {explanation.summary}
+                      </p>
+
+                      <p className="mt-3 text-sm font-medium text-slate-500">
+                        Value:{" "}
+                        <span className="font-semibold text-slate-700">
+                          {explanation.value}
+                        </span>
+                      </p>
+
+                      <div className="mt-4 border-t border-slate-100 pt-4">
+                        <p className="text-sm leading-6 text-slate-600">
+                          {explanation.details}
+                        </p>
+
+                        <div className="mt-4 rounded-xl bg-slate-50 p-4">
+                          <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                            Technical detail
+                          </p>
+
+                          <p className="mt-2 text-xs text-slate-600">
+                            Feature: {explanation.feature}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-600">
+                            SHAP impact:{" "}
+                            {explanation.impact >= 0 ? "+" : ""}
+                            {explanation.impact.toFixed(3)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                )
+              )}
+            </div>
+          </div>
+        )}
+
       {result.top_reasons && (
         <div className="mt-8 border-t border-blue-200 pt-6">
 

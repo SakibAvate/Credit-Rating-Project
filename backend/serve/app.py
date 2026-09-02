@@ -37,7 +37,7 @@ from fastapi.staticfiles import StaticFiles
 
 import config
 
-from serve.database import (
+from .database import (
     database_status,
     get_assessment,
     get_assessments,
@@ -777,6 +777,45 @@ def predict(
         reasons,
     ) = _score_track_a(X)
 
+    # --------------------------------------------------------
+    # CUSTOMER-FRIENDLY SHAP
+    # --------------------------------------------------------
+    # This is an additional explanation layer only.
+    # Existing probability, score, rating, decision, and
+    # technical top_reasons are preserved unchanged.
+    # --------------------------------------------------------
+
+    customer_explanations = None
+
+    if _explainer is not None:
+
+        X_enc = preprocessing.transform_new(
+            _preprocessor,
+            X.reindex(
+                columns=_feature_columns
+            ),
+        )
+
+        shap_values = (
+            _explainer.shap_values(
+                X_enc
+            )
+        )
+
+        shap_values = _shap_array(
+            shap_values
+        )
+
+        if shap_values is not None:
+
+            customer_explanations = (
+                explain.customer_explanations_for_row(
+                    shap_values[0],
+                    X_enc.columns.to_numpy(),
+                    X_enc.iloc[0].to_numpy(),
+                )
+            )
+
     save_assessment(
         track="TRACK_A",
         applicant_id=(
@@ -818,6 +857,10 @@ def predict(
             if reasons
             else None
         ),
+
+        customer_explanations=(
+            customer_explanations
+        ),
     )
 
 
@@ -854,6 +897,38 @@ def track_b_predict(
         decisions,
         reasons,
     ) = _score_track_b(X)
+
+    # --------------------------------------------------------
+    # CUSTOMER-FRIENDLY SHAP
+    # --------------------------------------------------------
+    customer_explanations = None
+
+    if _tb_explainer is not None:
+        X_enc = tb_preprocessing.transform_new(
+            _tb_preprocessor,
+            X.reindex(
+                columns=tb_config.FEATURE_COLUMNS
+            ),
+        )
+
+        shap_values = (
+            _tb_explainer.shap_values(
+                X_enc
+            )
+        )
+
+        shap_values = _shap_array(
+            shap_values
+        )
+
+        if shap_values is not None:
+            customer_explanations = (
+                tb_explain.customer_explanations_for_row(
+                    shap_values[0],
+                    X_enc.columns.to_numpy(),
+                    X_enc.iloc[0].to_numpy(),
+                )
+            )
 
     save_assessment(
         track="TRACK_B",
@@ -894,6 +969,10 @@ def track_b_predict(
             reasons[0]
             if reasons
             else None
+        ),
+
+        customer_explanations=(
+            customer_explanations
         ),
     )
 

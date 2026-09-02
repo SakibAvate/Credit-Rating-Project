@@ -497,8 +497,8 @@ export default function BureauAssessment() {
           formData.employmentYears === ""
             ? 0
             : toNumber(
-                formData.employmentYears
-              ),
+              formData.employmentYears
+            ),
 
         NAME_EDUCATION_TYPE:
           formData.education,
@@ -1180,6 +1180,90 @@ export default function BureauAssessment() {
 
               </div>
 
+              {/* =================================================
+                  CUSTOMER-FRIENDLY RISK EXPLANATIONS
+              ================================================= */}
+              {result.customer_explanations &&
+                result.customer_explanations.length > 0 && (
+                  <div className="mt-8 border-t border-emerald-200 pt-6">
+                    <div>
+                      {/* <h3 className="text-base font-bold text-slate-800">
+                        Why this assessment received this result
+                      </h3> */}
+
+                      <h2 className="text-lg font-bold text-slate-800">
+                        These are the main factors that influenced the assessment.
+                      </h2>
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                      {result.customer_explanations.map(
+                        (explanation, index) => (
+                          <details
+                            key={`${explanation.feature}-${index}`}
+                            className="group rounded-xl border border-slate-200 bg-white"
+                          >
+                            <summary className="flex cursor-pointer list-none items-start justify-between gap-4 p-5">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-slate-900">
+                                    {explanation.title}
+                                  </p>
+
+                                  <span
+                                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${explanation.direction ===
+                                        "decreases_risk"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-red-50 text-red-700"
+                                      }`}
+                                  >
+                                    {explanation.effect}
+                                  </span>
+                                </div>
+
+                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                  {explanation.summary}
+                                </p>
+
+                                <p className="mt-2 text-xs font-medium text-slate-400">
+                                  Value: {explanation.value}
+                                </p>
+                              </div>
+
+                              <span className="mt-1 shrink-0 text-xs font-semibold text-slate-400 transition group-open:rotate-180">
+                                ▼
+                              </span>
+                            </summary>
+
+                            <div className="border-t border-slate-100 px-5 pb-5 pt-4">
+                              <p className="text-sm leading-6 text-slate-600">
+                                {explanation.details}
+                              </p>
+
+                              <div className="mt-4 rounded-lg bg-slate-50 p-3">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                  Technical detail
+                                </p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Feature: {explanation.feature}
+                                  {" · "}
+                                  SHAP impact:{" "}
+                                  {explanation.impact >= 0 ? "+" : ""}
+                                  {explanation.impact.toFixed(3)}
+                                </p>
+                              </div>
+                            </div>
+                          </details>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+
+              {/* =================================================
+                  EXISTING TECHNICAL SHAP — PRESERVED
+              ================================================= */}
               {result.top_reasons && (
                 <div className="mt-8 border-t border-emerald-200 pt-6">
 
