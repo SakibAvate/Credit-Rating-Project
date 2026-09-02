@@ -10,6 +10,9 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 try:
     from pymongo import ASCENDING, DESCENDING, MongoClient
     from pymongo.errors import PyMongoError
@@ -26,6 +29,8 @@ except ImportError:  # Optional until history is enabled.
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://127.0.0.1:27017")
 MONGODB_DB = os.getenv("MONGODB_DB", "risklens")
+MONGODB_USER = os.getenv("MONGODB_USER")
+MONGODB_PASSWORD = os.getenv("MONGODB_PASSWORD")
 
 _client: MongoClient | None = None
 _db = None
@@ -50,10 +55,13 @@ def _get_db():
         )
 
     _client = MongoClient(
-        MONGODB_URI,
-        serverSelectionTimeoutMS=2000,
-        connectTimeoutMS=2000,
-    )
+    MONGODB_URI,
+    username=MONGODB_USER,
+    password=MONGODB_PASSWORD,
+    authSource="admin",
+    serverSelectionTimeoutMS=10000,
+    connectTimeoutMS=5000,
+)
     try:
         _client.admin.command("ping")
     except PyMongoError:
